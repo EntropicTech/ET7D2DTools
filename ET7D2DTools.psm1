@@ -209,17 +209,30 @@ function New-7D2DScheduledTask
         [String]
         $PathTo7D2D
     )
+    <#
+        .SYNOPSIS
+        Creates a scheduled task to start the 7 Days To Die server automatically when the server boots up.
 
+        .PARAMETER PathTo7D2D
+        Specifies the path to the directory where 7 Days To Die is installed.
+
+        .EXAMPLE
+        PS> New-7D2DScheduledTask -PathTo7D2D $PathTo7D2D
+    #>
+    
+    # Variable to startup script location.
     $PathToStartupScript = $PathTo7D2D + '\startdedicated.bat'
     
+    # Building the scheduled task so that it can be registered.
     $principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest    
     $Trigger = New-ScheduledTaskTrigger -AtStartup
     $Action = New-ScheduledTaskAction -Execute $PathToStartupScript -WorkingDirectory $PathTo7D2D
 
+    # Actually scheduling the task.
     Register-ScheduledTask -Action $action -Trigger $trigger -TaskName '7D2D Server Startup' -Description 'Runs the startdedicated.bat at server startup.' -Principal $principal
 }
 
-function Setup-7D2DServer
+function Start-7D2DServerSetup
 {
     <#
         .SYNOPSIS
@@ -232,7 +245,7 @@ function Setup-7D2DServer
         Specifies the path to the directory to install 7D2D in.
         
         .EXAMPLE
-        PS> Setup-7D2DServer -PathToSteamCMD E:\SteamCMD -PathTo7D2D E:\7d2d -Verbose
+        PS> Start-7D2DServerSetup -PathToSteamCMD D:\SteamCMD -PathTo7D2D D:\7d2d -Verbose
     #>
     [CmdletBinding()]
     param
@@ -245,10 +258,13 @@ function Setup-7D2DServer
         [String]
         $PathTo7D2D
     )
-
+    
+    # Install SteamCMD.
     Install-SteamCMD -Path $PathToSteamCMD
 
+    # Install the 7 Days To Die dedicated server.
     Install-7D2DServer -PathToSteamCMD $PathToSteamCMD -PathTo7D2D $PathTo7D2D
 
+    # Add task to Task Scheduler to run the startup script located in the 7 Days to Die install folder during server startup as SYSTEM.
     New-7D2DScheduledTask -PathTo7D2D $PathTo7D2D
 }
